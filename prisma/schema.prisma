@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -12,8 +7,109 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+model auditoria_precios {
+  id              Int       @id @default(autoincrement())
+  producto_id     Int?
+  precio_anterior Decimal?  @db.Decimal(10, 2)
+  precio_nuevo    Decimal?  @db.Decimal(10, 2)
+  fecha           DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model categoria {
+  id        Int         @id @default(autoincrement())
+  nombre    String      @unique
+  productos productos[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model cupones {
+  id                Int                @id @default(autoincrement())
+  codigo            String             @unique
+  porcentaje        Int?
+  fecha_vencimiento DateTime           @db.Date
+  activo            Boolean?           @default(true)
+  usuarios_cupones  usuarios_cupones[] @ignore
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model detalle_pedidos {
+  id              Int        @id @default(autoincrement())
+  pedido_id       Int?
+  producto_id     Int?
+  cantidad        Int
+  precio_unitario Decimal    @db.Decimal(10, 2)
+  pedidos         pedidos?   @relation(fields: [pedido_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productos       productos? @relation(fields: [producto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model pedidos {
+  id              Int               @id @default(autoincrement())
+  usuario_id      Int?
+  fecha           DateTime?         @default(now()) @db.Timestamptz(6)
+  estado          estado_pedido?    @default(pendiente)
+  total           Decimal?          @default(0) @db.Decimal(12, 2)
+  detalle_pedidos detalle_pedidos[]
+  usuarios        usuarios?         @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model productos {
+  id                    Int                     @id @default(autoincrement())
+  nombre                String                  @db.VarChar(100)
+  precio                Decimal                 @db.Decimal(10, 2)
+  stock                 Int                     @default(0)
+  categoria_id          Int?
+  detalle_pedidos       detalle_pedidos[]
+  categoria             categoria?              @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_categoria")
+  proveedores_productos proveedores_productos[] @ignore
+}
+
+model proveedores {
+  id                    Int                     @id @default(autoincrement())
+  razon_social          String                  @unique
+  email                 String                  @unique
+  proveedores_productos proveedores_productos[] @ignore
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model proveedores_productos {
+  proveedor_id     Int?
+  producto_id      Int?
+  precio_proveedor Decimal?     @db.Decimal(10, 2)
+  productos        productos?   @relation(fields: [producto_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  proveedores      proveedores? @relation(fields: [proveedor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@ignore
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model usuarios {
+  id               Int                @id @default(autoincrement())
+  nombre           String             @db.VarChar(100)
+  email            String             @unique @db.VarChar(100)
+  puntos           Int?               @default(0)
+  ciudad           String?            @db.VarChar(50)
+  fecha_registro   DateTime?          @default(now()) @db.Timestamp(6)
+  pedidos          pedidos[]
+  usuarios_cupones usuarios_cupones[] @ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model usuarios_cupones {
+  usuario_id Int?
+  cupon_id   Int?
+  cupones    cupones?  @relation(fields: [cupon_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuarios   usuarios? @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([usuario_id, cupon_id])
+  @@ignore
+}
+
+enum estado_pedido {
+  pendiente
+  procesado
+  enviado
+  entregado
+  cancelado
 }
