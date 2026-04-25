@@ -9,22 +9,23 @@ export class UsersService {
  
   constructor(private prismaService: PrismaService) {}
 
-  // create(createUserDto: CreateUserDto) {
-
-  //   const lastUserId = users.reduce((maxId, user) => Math.max(maxId, user.id), 0)
-  //   const newUser = { ... createUserDto, id: lastUserId + 1}
-  //   users.push(newUser)
-
-  //   return newUser
-  // }
+  create(createUserDto: CreateUserDto) {
+    return this.prismaService.usuarios.create({
+      data: createUserDto
+    })
+  }
 
   findAll() {
     return this.prismaService.usuarios.findMany();
   }
 
-  // findOne(id: number) {
-  //   return users.find(user => user.id === id);
-  // }
+  findOne(id: number) {
+    return this.prismaService.usuarios.findUnique(
+      {where: {id
+        : id
+      }}
+    );
+  }
  
   // update(id: number, updateUserDto: UpdateUserDto) {
   //   const user = this.findOne(id)
@@ -39,8 +40,9 @@ export class UsersService {
   //   return this.findOne(id)
   // }
 
-  // remove(id: number) {
-  //   users = users.filter(user => user.id != id);
-  //   return users
-  // }
+  remove(id: number){
+    return this.prismaService.usuarios.delete({where: {
+      id,
+    }})
+  }
 }
