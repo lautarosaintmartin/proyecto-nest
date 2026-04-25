@@ -1,48 +1,80 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
 
- 
-  constructor(private prismaService: PrismaService) {}
+  constructor(private prismaService: PrismaService) { }
 
-  create(createUserDto: CreateUserDto) {
-    return this.prismaService.usuarios.create({
-      data: createUserDto
-    })
+  async create(createUserDto: CreateUserDto) {
+
+    try {
+      return await this.prismaService.usuarios.create({
+        data: createUserDto
+      })
+    } catch (error) {
+      console.log(error)
+    }
   }
 
-  findAll() {
-    return this.prismaService.usuarios.findMany();
+  async findAll() {
+    try {
+      return await this.prismaService.usuarios.findMany();
+    } catch (error) {
+      console.log(error)
+    }
   }
 
-  findOne(id: number) {
-    return this.prismaService.usuarios.findUnique(
-      {where: {id
-        : id
-      }}
-    );
+  async findOne(id: number) {
+    try {
+      return await this.prismaService.usuarios.findUnique(
+        {
+          where: {
+            id
+              : id
+          }
+        }
+      );
+    } catch (error) {
+      console.log(error)
+    }
   }
- 
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   const user = this.findOne(id)
 
-  //   if(user){
-  //     const newUser = {...user, ...updateUserDto}
-  //     users = users.map(u => (u.id === id ? newUser : u))
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    const user = await this.findOne(id)
 
-      
-  //   }
+    try {
 
-  //   return this.findOne(id)
-  // }
 
-  remove(id: number){
-    return this.prismaService.usuarios.delete({where: {
-      id,
-    }})
+      if (!user) {
+        throw new NotFoundException('User not found')
+      }
+      return await this.prismaService.usuarios.update({
+        where: {
+          id,
+        },
+        data: updateUserDto
+
+      })
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
+  }
+
+  async remove(id: number) {
+
+    try {
+
+      return await this.prismaService.usuarios.delete({
+        where: {
+          id,
+        }
+      })
+    } catch (error) {
+      console.log(error)
+    }
   }
 }
